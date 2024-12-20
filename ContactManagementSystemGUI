@@ -1,0 +1,281 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Collections;
+import java.util.Comparator;
+
+public class ContactManagementSystemGUI extends JFrame {
+    private ContactManager contactManager;
+    private JTextArea contactDisplayArea;
+    private JTextField nameField, phoneField, emailField, addressField, extraField1, extraField2, searchField;
+    private JComboBox<String> contactTypeComboBox;  // ComboBox to select Work or Friend contact
+    private JComboBox<String> sortByComboBox;
+
+    public ContactManagementSystemGUI() {
+        contactManager = new ContactManager();
+        createGUI();
+    }
+
+    private void createGUI() {
+        setTitle("Contacts Management System");
+        setSize(700, 500);  // Increased size for better visibility
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        // Input Panel
+        JPanel inputPanel = new JPanel();
+        inputPanel.setLayout(new GridBagLayout());
+        inputPanel.setBorder(BorderFactory.createTitledBorder("Contact Details"));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Name, Phone, Email, Address
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        inputPanel.add(new JLabel("Name:"), gbc);
+
+        gbc.gridx = 1;
+        nameField = new JTextField(20);  // Increased width for better usability
+        inputPanel.add(nameField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        inputPanel.add(new JLabel("Phone:"), gbc);
+
+        gbc.gridx = 1;
+        phoneField = new JTextField(20);
+        inputPanel.add(phoneField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        inputPanel.add(new JLabel("Email:"), gbc);
+
+        gbc.gridx = 1;
+        emailField = new JTextField(20);
+        inputPanel.add(emailField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        inputPanel.add(new JLabel("Address:"), gbc);
+
+        gbc.gridx = 1;
+        addressField = new JTextField(20);
+        inputPanel.add(addressField, gbc);
+
+        // ComboBox for contact type (Work or Friend)
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        inputPanel.add(new JLabel("Contact Type:"), gbc);
+
+        gbc.gridx = 1;
+        contactTypeComboBox = new JComboBox<>(new String[]{"Work", "Friend"});
+        inputPanel.add(contactTypeComboBox, gbc);
+
+        // Extra field for WorkContact or FriendContact (Job Title or Birthday)
+        gbc.gridx = 0;
+        gbc.gridy = 5;
+        inputPanel.add(new JLabel("Extra Info 1 (Job/Birthday):"), gbc);
+
+        gbc.gridx = 1;
+        extraField1 = new JTextField(20);
+        inputPanel.add(extraField1, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 6;
+        inputPanel.add(new JLabel("Extra Info 2 (Hobby):"), gbc);
+
+        gbc.gridx = 1;
+        extraField2 = new JTextField(20);
+        inputPanel.add(extraField2, gbc);
+
+        add(inputPanel, BorderLayout.NORTH);
+
+        // Search Panel
+        JPanel searchPanel = new JPanel();
+        searchPanel.add(new JLabel("Search:"));
+        searchField = new JTextField(15);
+        searchPanel.add(searchField);
+        JButton searchButton = new JButton("Search");
+        searchButton.addActionListener(e -> searchContacts());
+        searchPanel.add(searchButton);
+
+        add(searchPanel, BorderLayout.CENTER);
+
+        // Button Panel
+        JPanel buttonPanel = new JPanel();
+        JButton addButton = new JButton("Add Contact");
+        JButton editButton = new JButton("Edit Contact");
+        JButton deleteButton = new JButton("Delete Contact");
+        JButton saveButton = new JButton("Save Contacts");
+        JButton loadButton = new JButton("Load Contacts");
+        JButton displayButton = new JButton("Display Contacts");
+        JButton sortButton = new JButton("Sort Contacts");
+
+        addButton.addActionListener(e -> addContact());
+        editButton.addActionListener(e -> editContact());
+        deleteButton.addActionListener(e -> deleteContact());
+        saveButton.addActionListener(e -> {
+            contactManager.saveContactsToFile("contacts.csv");
+            JOptionPane.showMessageDialog(null, "Contacts saved to contacts.csv");
+        });
+        loadButton.addActionListener(e -> {
+            contactManager.loadContactsFromFile("contacts.csv");
+            refreshContactDisplay();
+            JOptionPane.showMessageDialog(null, "Contacts loaded from contacts.csv");
+        });
+        displayButton.addActionListener(e -> displayContacts());
+        sortButton.addActionListener(e -> sortContacts());
+
+        buttonPanel.add(addButton);
+        buttonPanel.add(editButton);
+        buttonPanel.add(deleteButton);
+        buttonPanel.add(saveButton);
+        buttonPanel.add(loadButton);
+        buttonPanel.add(displayButton);
+        buttonPanel.add(sortButton);
+        add(buttonPanel, BorderLayout.SOUTH);
+
+        // Display Area (Larger and more presentable)
+        contactDisplayArea = new JTextArea();
+        contactDisplayArea.setEditable(false);
+        contactDisplayArea.setFont(new Font("Monospaced", Font.PLAIN, 12));  // Increased font for readability
+        contactDisplayArea.setLineWrap(true);
+        contactDisplayArea.setWrapStyleWord(true);
+        JScrollPane scrollPane = new JScrollPane(contactDisplayArea);
+        scrollPane.setPreferredSize(new Dimension(650, 200));  // Larger display area
+        add(scrollPane, BorderLayout.EAST);
+
+        setVisible(true);
+    }
+
+    private void addContact() {
+        String name = nameField.getText();
+        String phone = phoneField.getText();
+        String email = emailField.getText();
+        String address = addressField.getText();
+        String extra1 = extraField1.getText();  // Extra field for job title or birthday
+        String extra2 = extraField2.getText();  // Extra field for hobby
+        String contactType = (String) contactTypeComboBox.getSelectedItem();
+
+        if (validateInput(name, phone, email, address)) {
+            if (contactType.equals("Work")) {
+                WorkContact workContact = new WorkContact(name, phone, email, address, extra1, extra2, "General Department");
+                contactManager.addContact(workContact);
+            } else {
+                // Here, ensure that extra1 is birthday and extra2 is hobby
+                FriendContact friendContact = new FriendContact(name, phone, email, address, extra1, extra2);
+                contactManager.addContact(friendContact);
+            }
+            refreshContactDisplay();
+            clearInputFields();
+        } else {
+            JOptionPane.showMessageDialog(this, "Invalid input. Please check the fields.");
+        }
+    }
+
+    private boolean validateInput(String name, String phone, String email, String address) {
+        if (name.isEmpty()) return false;
+        if (!phone.matches("\\d{10}")) return false;
+        if (!email.matches("^[\\w-\\.]+@[\\w-]+\\.[a-zA-Z]{2,}$")) return false;
+        return !address.isEmpty();
+    }
+
+    private void refreshContactDisplay() {
+        contactDisplayArea.setText("");  // Clear previous display
+        if (contactManager.getContacts().isEmpty()) {
+            contactDisplayArea.append("No contacts available.\n");
+        } else {
+            for (Contact contact : contactManager.getContacts()) {
+                contactDisplayArea.append(contact.toString() + "\n");
+            }
+        }
+    }
+
+    private void clearInputFields() {
+        nameField.setText("");
+        phoneField.setText("");
+        emailField.setText("");
+        addressField.setText("");
+        extraField1.setText("");
+        extraField2.setText("");
+    }
+
+    private void displayContacts() {
+        refreshContactDisplay();
+    }
+
+    private void searchContacts() {
+        String searchTerm = searchField.getText().toLowerCase();
+        contactDisplayArea.setText("");  // Clear previous display
+
+        for (Contact contact : contactManager.getContacts()) {
+            if (contact.getName().toLowerCase().contains(searchTerm) ||
+                    contact.getPhone().contains(searchTerm) ||
+                    contact.getEmail().toLowerCase().contains(searchTerm)) {
+                contactDisplayArea.append(contact.toString() + "\n");
+            }
+        }
+    }
+
+    private void sortContacts() {
+        String selectedCriteria = (String) sortByComboBox.getSelectedItem();
+        switch (selectedCriteria) {
+            case "Name":
+                Collections.sort(contactManager.getContacts(), Comparator.comparing(Contact::getName));
+                break;
+            case "Phone":
+                Collections.sort(contactManager.getContacts(), Comparator.comparing(Contact::getPhone));
+                break;
+            case "Email":
+                Collections.sort(contactManager.getContacts(), Comparator.comparing(Contact::getEmail));
+                break;
+        }
+        refreshContactDisplay();
+    }
+
+    private void editContact() {
+        String name = JOptionPane.showInputDialog("Enter the name of the contact to edit:");
+        if (name != null) {
+            Contact contact = findContactByName(name);
+            if (contact != null) {
+                // Edit contact details (for simplicity, using text fields again)
+                nameField.setText(contact.getName());
+                phoneField.setText(contact.getPhone());
+                emailField.setText(contact.getEmail());
+                addressField.setText(contact.getAddress());
+                // Ask for new extra information depending on the type of contact
+                // After the user edits the details, we can update the contact
+            } else {
+                JOptionPane.showMessageDialog(this, "Contact not found.");
+            }
+        }
+    }
+
+    private void deleteContact() {
+        String name = JOptionPane.showInputDialog("Enter the name of the contact to delete:");
+        if (name != null) {
+            Contact contact = findContactByName(name);
+            if (contact != null) {
+                contactManager.getContacts().remove(contact);
+                refreshContactDisplay();
+                JOptionPane.showMessageDialog(this, "Contact deleted.");
+            } else {
+                JOptionPane.showMessageDialog(this, "Contact not found.");
+            }
+        }
+    }
+
+    private Contact findContactByName(String name) {
+        for (Contact contact : contactManager.getContacts()) {
+            if (contact.getName().equalsIgnoreCase(name)) {
+                return contact;
+            }
+        }
+        return null;
+    }
+
+    public static void main(String[] args) {
+        new ContactManagementSystemGUI();
+    }
+}
