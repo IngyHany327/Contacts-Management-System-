@@ -1,0 +1,46 @@
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ContactManager {
+    private List<Contact> contacts;
+
+    public ContactManager() {
+        contacts = new ArrayList<>();
+    }
+
+    public void addContact(Contact contact) {
+        contacts.add(contact);
+    }
+
+    public List<Contact> getContacts() {
+        return contacts;
+    }
+
+    public void saveContactsToFile(String filename) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+            for (Contact contact : contacts) {
+                writer.write(contact.getName() + "," + contact.getPhone() + "," + contact.getEmail() + "," + contact.getAddress());
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void loadContactsFromFile(String filename) {
+        contacts.clear(); // Clear existing contacts
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split(",");
+                if (data.length == 4) {
+                    Contact contact = new Contact(data[0], data[1], data[2], data[3]);
+                    contacts.add(contact);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
