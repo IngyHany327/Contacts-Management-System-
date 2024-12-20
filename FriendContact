@@ -1,0 +1,23 @@
+public class FriendContact extends Contact {
+    private String birthday;
+    private String favoriteHobby;
+
+    public FriendContact(String name, String phoneNumber, String email, String address, String birthday, String favoriteHobby) {
+        super(name, phoneNumber, email, address);
+        this.birthday = birthday;
+        this.favoriteHobby = favoriteHobby;
+    }
+
+    public String getBirthday() {
+        return birthday;
+    }
+
+    public String getFavoriteHobby() {
+        return favoriteHobby;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + ", Birthday: " + birthday + ", Hobby: " + favoriteHobby;
+    }
+}
